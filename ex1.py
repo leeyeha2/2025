@@ -1,2 +1,2 @@
 import streamlit as st
-st.title('배고파요')
+st.title('잠자고싶다')
