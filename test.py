@@ -1,6 +1,6 @@
 import streamlit as st
 
-# --- Custom CSS for background color ---
+# --- Custom CSS for background color and chat-like UI ---
 # BlanchedAlmond: #FFEBCD (매우 연하고 따뜻한 살구빛 노란색 계열)
 custom_css = """
 <style>
@@ -16,19 +16,111 @@ body {
 h1, h2, h3, h4, h5, h6 {
     color: #4A4A4A;
 }
+
+/* Chat-like UI styles */
+.chat-container {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 10px;
+    background-color: #F8F8F8; /* 채팅 배경색을 살짝 다르게 */
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+.message {
+    padding: 10px 15px;
+    border-radius: 20px;
+    margin-bottom: 10px;
+    max-width: 70%;
+    word-wrap: break-word;
+    font-size: 15px;
+}
+
+.harulralla-message {
+    background-color: #E2F0CB; /* 하룰랄라 메시지 배경색 (카톡 기본 녹색 계열) */
+    align-self: flex-start;
+    border-bottom-left-radius: 5px; /* 왼쪽 하단 모서리는 덜 둥글게 */
+    display: flex;
+    align-items: flex-start;
+}
+.harulralla-profile {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+.harulralla-profile img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+.harulralla-text-container {
+    flex-grow: 1;
+}
+
+.user-message {
+    background-color: #FFFACD; /* 사용자 메시지 배경색 (밝은 노란색 계열) */
+    align-self: flex-end;
+    border-bottom-right-radius: 5px; /* 오른쪽 하단 모서리는 덜 둥글게 */
+}
+.message-timestamp {
+    font-size: 12px;
+    color: #888888;
+    margin-top: 5px;
+    text-align: right; /* 사용자 메시지는 오른쪽, AI 메시지는 왼쪽 */
+}
+.harulralla-message .message-timestamp {
+    text-align: left;
+}
+.stButton>button {
+    background-color: #ADD8E6; /* Light Blue for send button */
+    color: white;
+    font-weight: bold;
+    border-radius: 8px;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+.stButton>button:hover {
+    background-color: #87CEEB;
+}
 /* 정보 메시지 박스의 테두리를 부드럽게 만듭니다 */
 .stAlert {
     border-radius: 8px;
 }
+
+/* Chat input area at bottom */
+.chat-input-area {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #FFEBCD; /* 배경색과 동일하게 */
+    padding: 10px 0;
+    border-top: 1px solid #EDEDED;
+    z-index: 100;
+}
+
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
 
-# 페이지 설정 (전체적인 레이아웃을 넓게 사용)
+# 페이지 설정
 st.set_page_config(layout="centered")
 
-# --- 상담 조언 함수 정의 (코드를 깔끔하게 정리하기 위해 함수로 분리) ---
+# --- 하룰랄라 아이콘 (실제 이미지 경로를 지정하거나 base64로 인코딩) ---
+# 예시: 여기서는 이모티콘으로 대체하거나, 실제 이미지 URL을 사용합니다.
+HARULRALLA_ICON = "👩‍💻" # 실제 이미지가 있다면 "https://your-image-url/harulralla_icon.png"
+USER_ICON = "😊"
+
+# --- 상담 조언 함수 정의 (이전과 동일) ---
 def get_counseling_message(category):
+    # (이전과 동일한 조언 내용 함수)
     if category == '학업':
         return """
         사랑하는 당신, 학업이라는 큰 산 앞에서 고민하고 계시는군요. 때로는 너무나 버겁고, 나만 뒤처지는 것 같은 기분이 들 수도 있을 거예요. 하지만 기억해주세요, 당신은 지금 이 순간에도 충분히 잘 해내고 있고, 꾸준히 나아가고 있답니다.
@@ -86,56 +178,94 @@ def get_counseling_message(category):
         이 힘든 시간이 당신을 더욱 단단하고 지혜롭게 만들 것이라고 믿어요. 하룰랄라는 언제나 당신의 옆에서 응원의 메시지를 보낼 거예요. 힘내세요, 당신의 내일은 오늘보다 더 밝을 거예요.
         """
 
+# --- Initialize chat history in session_state ---
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+if "category" not in st.session_state:
+    st.session_state.category = None
+if "initialized" not in st.session_state:
+    st.session_state.messages.append({"role": "harulralla", "content": "안녕하세요, 당신! 😊 하룰랄라 고민 상담소에 오신 것을 환영해요. 어떤 고민이 있으신가요?", "timestamp": "지금"})
+    st.session_state.initialized = True
+
 # --- 앱의 제목 및 설명 ---
-st.title("💡 마음을 밝히는 빛, 하룰랄라 고민 상담소")
-st.markdown("어두운 밤, 마음속 고민으로 잠 못 드는 당신을 위해 하룰랄라가 따뜻한 빛이 되어 드릴게요.")
+st.title("💡 하룰랄라 고민 상담소")
+st.markdown("편안하게 마음을 털어놓으세요.")
 st.markdown("---") # 시각적인 구분선
 
-# 배경색 적용 안내 추가
-st.info("🎨 **따뜻한 '무드등' 분위기를 위해 앱의 배경색을 연한 살구색으로 조정했습니다.**")
-st.markdown("---")
+# --- Main chat UI ---
+st.container()
+with st.container(): # Use a container to visually group chat history
+    st.markdown('<div class="chat-container">', unsafe_allow_html=True)
 
-# --- 고민 카테고리 선택 ---
-st.header("1. 어떤 고민이신가요?")
-category = st.selectbox(
-    "아래 목록에서 당신의 마음에 가장 가까운 고민의 종류를 선택해주세요. 잠시 숨을 고르고 편안하게 선택해보아요.",
-    ['고민 종류를 선택해주세요', '학업', '진로', '가족', '연애', '직장', '인간관계', '기타']
-)
+    # Display chat messages from history
+    for message in st.session_state.messages:
+        if message["role"] == "harulralla":
+            st.markdown(f"""
+            <div class="harulralla-message">
+                <div class="harulralla-profile">{HARULRALLA_ICON}</div>
+                <div class="harulralla-text-container">
+                    <div style="font-weight: bold; margin-bottom: 3px;">하룰랄라</div>
+                    <div>{message["content"]}</div>
+                    <div class="message-timestamp">{message["timestamp"]}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        else: # user message
+            st.markdown(f"""
+            <div class="user-message">
+                <div>{message["content"]}</div>
+                <div class="message-timestamp">{message["timestamp"]}</div>
+            </div>
+            """, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-# 선택된 카테고리에 따라 다음 단계 진행
-if category != '고민 종류를 선택해주세요':
-    st.markdown("---") # 시각적인 구분선
-    st.header(f"2. 당신의 소중한 고민을 들려주세요. ({category})")
-    st.write(f"선택하신 **'{category}'**에 대한 솔직하고 구체적인 마음속 이야기를 적어주세요. 하룰랄라는 언제나 당신의 이야기를 경청할 준비가 되어 있습니다.")
-
-    # --- 고민 내용 입력 ---
-    user_worry = st.text_area(
-        "여기에 당신의 마음을 편안하게 내려놓듯 고민을 자세히 작성해주세요. (최소 20자 권장)",
-        height=200, # 텍스트 영역의 높이를 좀 더 늘림
-        help="구체적으로 작성할수록 하룰랄라가 더 따뜻하고 적절한 조언을 해드릴 수 있어요. 괜찮아요, 천천히 솔직하게 적어보세요." # 툴팁 도움말
+# --- Category Selection (at the top, before chat input for initial setup) ---
+if st.session_state.category is None:
+    st.markdown("---")
+    st.header("1. 어떤 고민이신가요?")
+    selected_category = st.selectbox(
+        "아래 목록에서 당신의 마음에 가장 가까운 고민의 종류를 선택해주세요.",
+        ['고민 종류를 선택해주세요', '학업', '진로', '가족', '연애', '직장', '인간관계', '기타'],
+        key="category_select"
     )
 
-    # --- 상담받기 버튼 ---
-    st.markdown("---") # 시각적인 구분선
-    col1, col2, col3 = st.columns([1, 1, 1]) # 버튼을 중앙에 배치하기 위해 컬럼 활용
-    with col2: # 가운데 컬럼에 버튼 배치
-        if st.button("따뜻한 조언 받기"):
-            if user_worry and len(user_worry) >= 20: # 최소 글자 수 제한
-                st.markdown("---") # 시각적인 구분선
-                st.header("3. 하룰랄라의 조언")
-
-                counseling_message = get_counseling_message(category)
-                st.info(f"{counseling_message}") # 깔끔한 파란색 박스 안에 조언 표시. 제목은 함수 안에 포함
-
-                st.markdown("---")
-                st.markdown("이 조언이 당신의 마음에 작은 위로와 따뜻한 힘이 되기를 진심으로 바랍니다. 괜찮아요, 당신은 충분히 잘 해낼 수 있어요!")
-                st.markdown("_언제든지 마음이 힘들 때 다시 찾아와 주세요. 하룰랄라는 늘 당신의 이야기를 기다릴게요._")
-            else:
-                st.warning("⚠️ 당신의 소중한 고민 내용을 최소 20자 이상 작성해주셔야 하룰랄라가 더 깊이 있는 조언을 해드릴 수 있어요! 다시 한번 확인해주세요.")
+    if selected_category != '고민 종류를 선택해주세요':
+        st.session_state.category = selected_category
+        st.session_state.messages.append({"role": "user", "content": f"제 고민은 '{st.session_state.category}'과 관련이 있어요.", "timestamp": "방금"})
+        st.session_state.messages.append({"role": "harulralla", "content": f"네, **'{st.session_state.category}'** 관련 고민이시군요. 괜찮아요, 하룰랄라가 당신의 마음속 이야기를 들을 준비가 되어 있어요. 무엇이든 편안하게 이야기해주세요.📝", "timestamp": "지금"})
+        # Rerun to update chat history after category selection
+        st.experimental_rerun()
 else:
-    st.info("⬆️ 먼저 고민의 종류를 선택해주세요. 위에서 목록을 눌러 선택하실 수 있습니다. 천천히 골라보세요.")
+    # --- Chat Input Area ---
+    st.markdown('<div class="chat-input-area">', unsafe_allow_html=True)
+    st.markdown("---")
+    user_input = st.text_area(
+        "당신의 고민을 여기에 편안하게 적어주세요. (최소 20자)",
+        key="user_worry_input", # Unique key for the text area
+        height=100,
+        help="구체적으로 작성할수록 하룰랄라가 더 따뜻하고 적절한 조언을 해드릴 수 있어요."
+    )
 
-# --- 앱 하단 푸터 ---
+    if st.button("✉️ 보내기"):
+        if user_input and len(user_input) >= 20:
+            # Add user message to history
+            st.session_state.messages.append({"role": "user", "content": user_input, "timestamp": "방금"})
+
+            # Generate AI response based on selected category
+            counseling_message = get_counseling_message(st.session_state.category)
+            st.session_state.messages.append({"role": "harulralla", "content": counseling_message, "timestamp": "지금"})
+
+            # Clear the input area after sending
+            st.session_state.user_worry_input = "" # Clear the text_area
+
+            # Rerun the app to display updated messages
+            st.experimental_rerun()
+        else:
+            st.warning("⚠️ 당신의 소중한 고민 내용을 최소 20자 이상 작성해주셔야 하룰랄라가 더 깊이 있는 조언을 해드릴 수 있어요! 다시 한번 확인해주세요.")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+
+# --- 앱 하단 푸터 (고정) ---
 st.markdown("---")
 st.markdown("<p style='text-align: center; color: grey;'><sub>이 앱은 사용자에게 따뜻한 위로와 조언을 드리고자 제작되었습니다. 모든 조언은 일반적인 내용을 담고 있으며, 전문적인 상담을 대체할 수 없습니다.</sub></p>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; color: grey;'><sub>Developed with ❤️ by 하룰랄라</sub></p>", unsafe_allow_html=True)
