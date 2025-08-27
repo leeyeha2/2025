@@ -113,8 +113,6 @@ st.markdown("어두운 밤, 마음속 고민으로 잠 못 드는 당신을 위�
 st.markdown("---") # 시각적인 구분선
 
 # (배경색 조정 안내 문구는 제거됨)
-# st.info("🎨 **따뜻한 '무드등' 분위기를 위해 앱의 배경색을 연한 살구색으로 조정했습니다.**")
-# st.markdown("---") # 관련 구분선도 제거 (필요하다면 유지 가능)
 
 # --- 고민 카테고리 선택 ---
 st.header("1. 어떤 고민이신가요?")
@@ -141,8 +139,8 @@ if category != '고민 종류를 선택해주세요':
     col1, col2, col3 = st.columns([1, 1, 1]) # 버튼을 중앙에 배치하기 위해 컬럼 활용
     with col2: # 가운데 컬럼에 버튼 배치
         if st.button("따뜻한 조언 받기"):
-            # 최소 글자 수 제한 조건은 유지하되, 문구에서 '권장'을 삭제하고 직접적인 유효성 검사로 변경
-            if user_worry and len(user_worry) > 0: # 내용이 비어있지 않은지만 확인
+            # 내용이 비어있지 않은지만 확인 (빈 문자열이 아닐 때)
+            if user_worry:
                 st.markdown("---") # 시각적인 구분선
                 st.header("3. 하룰랄라의 조언")
 
@@ -150,16 +148,19 @@ if category != '고민 종류를 선택해주세요':
                 st.info(f"{counseling_message}") # 깔끔한 파란색 박스 안에 조언 표시
 
                 # --- 조언 복사하기 기능 추가 ---
-                st.markdown("""
+                # JavaScript 백틱(`)을 사용하여 문자열을 안전하게 감쌉니다.
+                # JavaScript 템플릿 리터럴 안에 들어갈 백틱은 \`로 이스케이프 처리합니다.
+                safe_counseling_message = counseling_message.replace("`", "\\`")
+
+                st.markdown(f"""
                 <div style="text-align: right; margin-top: 10px;">
-                    <button onclick="copyToClipboard(document.getElementById('counseling_text_to_copy').innerText)"
+                    <button onclick="copyToClipboard(`{safe_counseling_message}`)"
                             style="background-color: #6C757D; color: white; padding: 8px 15px; border-radius: 5px; border: none; cursor: pointer;">
                         📋 조언 복사하기
                     </button>
                 </div>
-                <textarea id="counseling_text_to_copy" style="position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0;">{}</textarea>
                 <script>
-                function copyToClipboard(text) {
+                function copyToClipboard(text) {{
                     var dummy = document.createElement("textarea");
                     document.body.appendChild(dummy);
                     dummy.value = text;
@@ -167,31 +168,16 @@ if category != '고민 종류를 선택해주세요':
                     document.execCommand("copy");
                     document.body.removeChild(dummy);
                     alert("하룰랄라의 조언이 클립보드에 복사되었습니다! 😊");
-                }
+                }}
                 </script>
-                """.format(counseling_message), unsafe_allow_html=True)
-                # copyToClipboard(document.querySelector('.stAlert div').innerText)
-                # st.components.v1.html(
-                #     f"""
-                #     <script>
-                #         var textToCopy = `{counseling_message.replace("`", "\\`")}`; // escape backticks
-                #         navigator.clipboard.writeText(textToCopy).then(function() {{
-                #             alert("조언이 클립보드에 복사되었습니다!");
-                #         }}, function(err) {{
-                #             console.error('Could not copy text: ', err);
-                #             alert("조언 복사에 실패했습니다. 직접 복사해주세요.");
-                #         }});
-                #     </script>
-                #     """,
-                #     height=0
-                # )
+                """, unsafe_allow_html=True)
 
 
                 st.markdown("---")
                 st.markdown("이 조언이 당신의 마음에 작은 위로와 따뜻한 힘이 되기를 진심으로 바랍니다. 괜찮아요, 당신은 충분히 잘 해낼 수 있어요!")
                 st.markdown("_언제든지 마음이 힘들 때 다시 찾아와 주세요. 하룰랄라는 늘 당신의 이야기를 기다릴게요._")
-            else: # 내용이 아예 없거나 너무 짧을 때
-                st.warning("⚠️ 소중한 고민 내용을 조금 더 자세히 작성해주셔야 하룰랄라가 따뜻한 조언을 해드릴 수 있어요! 다시 한번 확인해주세요.")
+            else: # 내용이 아예 없거나 빈 문자열일 때
+                st.warning("⚠️ 소중한 고민 내용을 작성해주셔야 하룰랄라가 따뜻한 조언을 해드릴 수 있어요! 다시 한번 확인해주세요.")
 else:
     st.info("⬆️ 먼저 고민의 종류를 선택해주세요. 위에서 목록을 눌러 선택하실 수 있습니다. 천천히 골라보세요.")
 
