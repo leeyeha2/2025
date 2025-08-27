@@ -20,6 +20,27 @@ h1, h2, h3, h4, h5, h6 {
 .stAlert {
     border-radius: 8px;
 }
+/* Streamlit의 기본 text_area 배경색 변경 */
+textarea {
+    background-color: #FFFFFF !important; /* 흰색으로 설정하여 입력 가독성 높임 */
+    color: #333333 !important;
+}
+
+/* Copy button styling */
+.stButton > button {
+    background-color: #ADD8E6; /* Light Blue for send button */
+    color: white;
+    font-weight: bold;
+    border-radius: 8px;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 10px; /* 버튼 상단 여백 추가 */
+}
+.stButton > button:hover {
+    background-color: #87CEEB;
+}
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
@@ -91,9 +112,9 @@ st.title("💡 마음을 밝히는 빛, 하룰랄라 고민 상담소")
 st.markdown("어두운 밤, 마음속 고민으로 잠 못 드는 당신을 위해 하룰랄라가 따뜻한 빛이 되어 드릴게요.")
 st.markdown("---") # 시각적인 구분선
 
-# 배경색 적용 안내 추가
-st.info("🎨 **따뜻한 '무드등' 분위기를 위해 앱의 배경색을 연한 살구색으로 조정했습니다.**")
-st.markdown("---")
+# (배경색 조정 안내 문구는 제거됨)
+# st.info("🎨 **따뜻한 '무드등' 분위기를 위해 앱의 배경색을 연한 살구색으로 조정했습니다.**")
+# st.markdown("---") # 관련 구분선도 제거 (필요하다면 유지 가능)
 
 # --- 고민 카테고리 선택 ---
 st.header("1. 어떤 고민이신가요?")
@@ -110,29 +131,68 @@ if category != '고민 종류를 선택해주세요':
 
     # --- 고민 내용 입력 ---
     user_worry = st.text_area(
-        "여기에 당신의 마음을 편안하게 내려놓듯 고민을 자세히 작성해주세요. (최소 20자 권장)",
+        "여기에 당신의 마음을 편안하게 내려놓듯 고민을 자세히 작성해주세요.", # '최소 20자 권장' 문구 제거
         height=200, # 텍스트 영역의 높이를 좀 더 늘림
         help="구체적으로 작성할수록 하룰랄라가 더 따뜻하고 적절한 조언을 해드릴 수 있어요. 괜찮아요, 천천히 솔직하게 적어보세요." # 툴팁 도움말
     )
 
-    # --- 상담받기 버튼 --- (여기서부터 두 번째 코드 조각이 연결됩니다)
+    # --- 상담받기 버튼 ---
     st.markdown("---") # 시각적인 구분선
     col1, col2, col3 = st.columns([1, 1, 1]) # 버튼을 중앙에 배치하기 위해 컬럼 활용
     with col2: # 가운데 컬럼에 버튼 배치
         if st.button("따뜻한 조언 받기"):
-            if user_worry and len(user_worry) >= 20: # 최소 글자 수 제한
+            # 최소 글자 수 제한 조건은 유지하되, 문구에서 '권장'을 삭제하고 직접적인 유효성 검사로 변경
+            if user_worry and len(user_worry) > 0: # 내용이 비어있지 않은지만 확인
                 st.markdown("---") # 시각적인 구분선
                 st.header("3. 하룰랄라의 조언")
 
                 counseling_message = get_counseling_message(category)
-                st.info(f"{counseling_message}") # 깔끔한 파란색 박스 안에 조언 표시. 제목은 함수 안에 포함
+                st.info(f"{counseling_message}") # 깔끔한 파란색 박스 안에 조언 표시
+
+                # --- 조언 복사하기 기능 추가 ---
+                st.markdown("""
+                <div style="text-align: right; margin-top: 10px;">
+                    <button onclick="copyToClipboard(document.getElementById('counseling_text_to_copy').innerText)"
+                            style="background-color: #6C757D; color: white; padding: 8px 15px; border-radius: 5px; border: none; cursor: pointer;">
+                        📋 조언 복사하기
+                    </button>
+                </div>
+                <textarea id="counseling_text_to_copy" style="position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0;">{}</textarea>
+                <script>
+                function copyToClipboard(text) {
+                    var dummy = document.createElement("textarea");
+                    document.body.appendChild(dummy);
+                    dummy.value = text;
+                    dummy.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(dummy);
+                    alert("하룰랄라의 조언이 클립보드에 복사되었습니다! 😊");
+                }
+                </script>
+                """.format(counseling_message), unsafe_allow_html=True)
+                # copyToClipboard(document.querySelector('.stAlert div').innerText)
+                # st.components.v1.html(
+                #     f"""
+                #     <script>
+                #         var textToCopy = `{counseling_message.replace("`", "\\`")}`; // escape backticks
+                #         navigator.clipboard.writeText(textToCopy).then(function() {{
+                #             alert("조언이 클립보드에 복사되었습니다!");
+                #         }}, function(err) {{
+                #             console.error('Could not copy text: ', err);
+                #             alert("조언 복사에 실패했습니다. 직접 복사해주세요.");
+                #         }});
+                #     </script>
+                #     """,
+                #     height=0
+                # )
+
 
                 st.markdown("---")
                 st.markdown("이 조언이 당신의 마음에 작은 위로와 따뜻한 힘이 되기를 진심으로 바랍니다. 괜찮아요, 당신은 충분히 잘 해낼 수 있어요!")
                 st.markdown("_언제든지 마음이 힘들 때 다시 찾아와 주세요. 하룰랄라는 늘 당신의 이야기를 기다릴게요._")
-            else:
-                st.warning("⚠️ 당신의 소중한 고민 내용을 최소 20자 이상 작성해주셔야 하룰랄라가 더 깊이 있는 조언을 해드릴 수 있어요! 다시 한번 확인해주세요.")
-else: # 이 'else'는 'if category != '고민 종류를 선택해주세요':' 에 해당합니다.
+            else: # 내용이 아예 없거나 너무 짧을 때
+                st.warning("⚠️ 소중한 고민 내용을 조금 더 자세히 작성해주셔야 하룰랄라가 따뜻한 조언을 해드릴 수 있어요! 다시 한번 확인해주세요.")
+else:
     st.info("⬆️ 먼저 고민의 종류를 선택해주세요. 위에서 목록을 눌러 선택하실 수 있습니다. 천천히 골라보세요.")
 
 # --- 앱 하단 푸터 ---
