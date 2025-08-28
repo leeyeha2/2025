@@ -26,7 +26,7 @@ textarea {
     color: #333333 !important;
 }
 
-/* Copy button styling */
+/* Button styling (기존 Copy 버튼 스타일은 이제 Submit 버튼에만 적용됩니다) */
 .stButton > button {
     background-color: #ADD8E6; /* Light Blue for send button */
     color: white;
@@ -112,7 +112,7 @@ st.title("💡 마음을 밝히는 빛, 하룰랄라 고민 상담소")
 st.markdown("어두운 밤, 마음속 고민으로 잠 못 드는 당신을 위해 하룰랄라가 따뜻한 빛이 되어 드릴게요.")
 st.markdown("---") # 시각적인 구분선
 
-# (배경색 조정 안내 문구는 제거됨)
+# (배경색 조정 안내 문구 제거)
 
 # --- 고민 카테고리 선택 ---
 st.header("1. 어떤 고민이신가요?")
@@ -129,7 +129,7 @@ if category != '고민 종류를 선택해주세요':
 
     # --- 고민 내용 입력 ---
     user_worry = st.text_area(
-        "여기에 당신의 마음을 편안하게 내려놓듯 고민을 자세히 작성해주세요.", # '최소 20자 권장' 문구 제거
+        "여기에 당신의 마음을 편안하게 내려놓듯 고민을 자세히 작성해주세요.",
         height=200, # 텍스트 영역의 높이를 좀 더 늘림
         help="구체적으로 작성할수록 하룰랄라가 더 따뜻하고 적절한 조언을 해드릴 수 있어요. 괜찮아요, 천천히 솔직하게 적어보세요." # 툴팁 도움말
     )
@@ -139,7 +139,7 @@ if category != '고민 종류를 선택해주세요':
     col1, col2, col3 = st.columns([1, 1, 1]) # 버튼을 중앙에 배치하기 위해 컬럼 활용
     with col2: # 가운데 컬럼에 버튼 배치
         if st.button("따뜻한 조언 받기"):
-            # 내용이 비어있지 않은지만 확인 (빈 문자열이 아닐 때)
+            # 내용이 비어있지 않은지만 확인
             if user_worry:
                 st.markdown("---") # 시각적인 구분선
                 st.header("3. 하룰랄라의 조언")
@@ -147,31 +147,8 @@ if category != '고민 종류를 선택해주세요':
                 counseling_message = get_counseling_message(category)
                 st.info(f"{counseling_message}") # 깔끔한 파란색 박스 안에 조언 표시
 
-                # --- 조언 복사하기 기능 추가 ---
-                # JavaScript 백틱(`)을 사용하여 문자열을 안전하게 감쌉니다.
-                # JavaScript 템플릿 리터럴 안에 들어갈 백틱은 \`로 이스케이프 처리합니다.
-                safe_counseling_message = counseling_message.replace("`", "\\`")
-
-                st.markdown(f"""
-                <div style="text-align: right; margin-top: 10px;">
-                    <button onclick="copyToClipboard(`{safe_counseling_message}`)"
-                            style="background-color: #6C757D; color: white; padding: 8px 15px; border-radius: 5px; border: none; cursor: pointer;">
-                        📋 조언 복사하기
-                    </button>
-                </div>
-                <script>
-                function copyToClipboard(text) {{
-                    var dummy = document.createElement("textarea");
-                    document.body.appendChild(dummy);
-                    dummy.value = text;
-                    dummy.select();
-                    document.execCommand("copy");
-                    document.body.removeChild(dummy);
-                    alert("하룰랄라의 조언이 클립보드에 복사되었습니다! 😊");
-                }}
-                </script>
-                """, unsafe_allow_html=True)
-
+                # --- 조언 복사하기 기능 제거 ---
+                # 이전에 이 부분에 조언 복사하기 버튼과 관련 스크립트가 있었습니다.
 
                 st.markdown("---")
                 st.markdown("이 조언이 당신의 마음에 작은 위로와 따뜻한 힘이 되기를 진심으로 바랍니다. 괜찮아요, 당신은 충분히 잘 해낼 수 있어요!")
